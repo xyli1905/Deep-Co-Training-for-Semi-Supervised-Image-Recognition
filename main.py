@@ -12,7 +12,7 @@ import pickle
 import argparse
 import random
 from torch.autograd import Variable
-from tensorboardX import SummaryWriter 
+# from tensorboardX import SummaryWriter 
 from random import shuffle
 from tqdm import tqdm
 from model import co_train_classifier
@@ -60,7 +60,7 @@ torch.set_printoptions(precision=4)
 if not os.path.isdir(args.tensorboard_dir):
     os.mkdir(args.tensorboard_dir)
 
-writer = SummaryWriter(args.tensorboard_dir)
+# writer = SummaryWriter(args.tensorboard_dir)
 start_epoch = 0
 end_epoch = args.epochs
 class_num = args.num_class 
@@ -451,8 +451,8 @@ def train(epoch):
         ld += Loss_diff.item()
         
         # using tensorboard to monitor loss and acc
-        writer.add_scalars('data/loss', {'loss_sup': Loss_sup.item(), 'loss_cot': Loss_cot.item(), 'loss_diff': Loss_diff.item()}, (epoch)*(step)+i)
-        writer.add_scalars('data/training_accuracy', {'net1 acc': 100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 'net2 acc': 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2)}, (epoch)*(step)+i)
+        # writer.add_scalars('data/loss', {'loss_sup': Loss_sup.item(), 'loss_cot': Loss_cot.item(), 'loss_diff': Loss_diff.item()}, (epoch)*(step)+i)
+        # writer.add_scalars('data/training_accuracy', {'net1 acc': 100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 'net2 acc': 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2)}, (epoch)*(step)+i)
         if (i+1)%50 == 0:
             # print statistics
             tqdm.write('net1 training acc: %.3f%% | net2 training acc: %.3f%% | total loss: %.3f | loss_sup: %.3f | loss_cot: %.3f | loss_diff: %.3f  '
@@ -484,7 +484,7 @@ def test(epoch):
 
     print('\nnet1 test acc: %.3f%% (%d/%d) | net2 test acc: %.3f%% (%d/%d)'
         % (100.*correct1/total1, correct1, total1, 100.*correct2/total2, correct2, total2))
-    writer.add_scalars('data/testing_accuracy', {'net1 acc': 100.*correct1/total1, 'net2 acc': 100.*correct2/total2}, epoch)
+    # writer.add_scalars('data/testing_accuracy', {'net1 acc': 100.*correct1/total1, 'net2 acc': 100.*correct2/total2}, epoch)
 
     acc = ((100.*correct1/total1)+(100.*correct2/total2))/2
     if acc > best_acc:
@@ -496,5 +496,5 @@ for epoch in range(start_epoch, end_epoch):
     test(epoch)
     checkpoint(epoch, 'last')
 
-writer.export_scalars_to_json('./'+ args.tensorboard_dir + 'output.json')
-writer.close()
+# writer.export_scalars_to_json('./'+ args.tensorboard_dir + 'output.json')
+# writer.close()
