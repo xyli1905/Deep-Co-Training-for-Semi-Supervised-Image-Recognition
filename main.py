@@ -240,7 +240,7 @@ if args.resume:
 else:
 
     #Build the model and get the index of S and U
-    print('Building model..')
+    print('Building model..', flush=True)
     start_epoch = 0
     net1 = co_train_classifier()
     net2 = co_train_classifier()
@@ -321,7 +321,7 @@ optimizer = optim.SGD(params, lr=args.base_lr, momentum=args.momentum, weight_de
 
 def checkpoint(epoch, option):
     # Save checkpoint.
-    print('Saving..')
+    print('Saving..', flush=True)
     state = {
         'net1': net1,
         'net2': net2,
@@ -348,7 +348,7 @@ def train(epoch):
     adjust_lamda(epoch)
     # tuning alpha of peer term
     adjust_alpha(epoch)
-    print(f"At epoch {epoch} the present alpha is {alpha:.5f}")
+    print(f"At epoch {epoch} the present alpha is {alpha:.5f}", flush=True)
     
     total_S1 = 0
     total_S2 = 0
@@ -370,7 +370,7 @@ def train(epoch):
     # iterator for peer
     P_iter1 = iter(P_loader1)
     P_iter2 = iter(P_loader2)
-    print('epoch:', epoch+1)
+    print('epoch:', epoch+1, flush=True)
     # for i in tqdm(range(step)):
     for i in range(step):
         inputs_S1, labels_S1 = S_iter1.next()
@@ -459,7 +459,7 @@ def train(epoch):
             # tqdm.write('net1 training acc: %.3f%% | net2 training acc: %.3f%% | total loss: %.3f | loss_sup: %.3f | loss_cot: %.3f | loss_diff: %.3f  '
             #     % (100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2), running_loss/(i+1), ls/(i+1), lc/(i+1), ld/(i+1)))
             print('net1 training acc: %.3f%% | net2 training acc: %.3f%% | total loss: %.3f | loss_sup: %.3f | loss_cot: %.3f | loss_diff: %.3f  '
-                % (100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2), running_loss/(i+1), ls/(i+1), lc/(i+1), ld/(i+1)))
+                % (100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2), running_loss/(i+1), ls/(i+1), lc/(i+1), ld/(i+1)), flush=True)
 
 
 def test(epoch):
@@ -486,7 +486,7 @@ def test(epoch):
             correct2 += predicted2[1].eq(targets).sum().item()
 
     print('\nnet1 test acc: %.3f%% (%d/%d) | net2 test acc: %.3f%% (%d/%d)'
-        % (100.*correct1/total1, correct1, total1, 100.*correct2/total2, correct2, total2))
+        % (100.*correct1/total1, correct1, total1, 100.*correct2/total2, correct2, total2), flush=True)
     # writer.add_scalars('data/testing_accuracy', {'net1 acc': 100.*correct1/total1, 'net2 acc': 100.*correct2/total2}, epoch)
 
     acc = ((100.*correct1/total1)+(100.*correct2/total2))/2
