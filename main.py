@@ -19,6 +19,7 @@ from model import co_train_classifier
 from advertorch.attacks import GradientSignAttack
 from bisect import bisect_right
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 parser = argparse.ArgumentParser(description='Deep Co-Training for Semi-Supervised Image Recognition')
 parser.add_argument('--sess', default='default', type=str, help='session id')
