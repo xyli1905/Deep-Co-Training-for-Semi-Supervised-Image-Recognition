@@ -371,7 +371,8 @@ def train(epoch):
     P_iter1 = iter(P_loader1)
     P_iter2 = iter(P_loader2)
     print('epoch:', epoch+1)
-    for i in tqdm(range(step)):
+    # for i in tqdm(range(step)):
+    for i in range(step):
         inputs_S1, labels_S1 = S_iter1.next()
         inputs_S2, labels_S2 = S_iter2.next()
         inputs_U, labels_U = U_iter.next() # note that labels_U will not be used for training.
@@ -455,7 +456,9 @@ def train(epoch):
         # writer.add_scalars('data/training_accuracy', {'net1 acc': 100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 'net2 acc': 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2)}, (epoch)*(step)+i)
         if (i+1)%50 == 0:
             # print statistics
-            tqdm.write('net1 training acc: %.3f%% | net2 training acc: %.3f%% | total loss: %.3f | loss_sup: %.3f | loss_cot: %.3f | loss_diff: %.3f  '
+            # tqdm.write('net1 training acc: %.3f%% | net2 training acc: %.3f%% | total loss: %.3f | loss_sup: %.3f | loss_cot: %.3f | loss_diff: %.3f  '
+            #     % (100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2), running_loss/(i+1), ls/(i+1), lc/(i+1), ld/(i+1)))
+            print('net1 training acc: %.3f%% | net2 training acc: %.3f%% | total loss: %.3f | loss_sup: %.3f | loss_cot: %.3f | loss_diff: %.3f  '
                 % (100. * (train_correct_S1+train_correct_U1) / (total_S1+total_U1), 100. * (train_correct_S2+train_correct_U2) / (total_S2+total_U2), running_loss/(i+1), ls/(i+1), lc/(i+1), ld/(i+1)))
 
 
