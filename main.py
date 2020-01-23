@@ -17,6 +17,7 @@ from random import shuffle
 from tqdm import tqdm
 from model import co_train_classifier
 from advertorch.attacks import GradientSignAttack
+from bisect import bisect_right
 
 
 parser = argparse.ArgumentParser(description='Deep Co-Training for Semi-Supervised Image Recognition')
@@ -94,7 +95,33 @@ def adjust_lamda(epoch):
         lambda_diff = lambda_diff_max*math.exp(-5*(1-epoch/args.warm_up)**2)
     else: 
         lambda_cot = lambda_cot_max
-        lambda_diff = lambda_diff_max   
+        lambda_diff = lambda_diff_max
+
+
+# settings for alpha
+base_alpha = 0.
+alpha = base_alpha
+alpha_list = [0.0, 0.5]
+milestones = [20, 40]
+
+#calculate slope:
+slope = []
+alpha_cur = base_alpha
+epoch_cur = 0
+length = len(alpha_list)
+for i in range(length):
+    sl = (alpha_list[i] - alpha_cur) / float(milestones[i] - epoch_cur)
+    slope.append(sl)
+    alpha_cur = alpha_list[i]
+    epoch_cur = milestones[i]
+
+def adjust_alpha(epoch):
+    epoch = epoch - 1
+    idx = bisect_right(milestones, epoch)
+    global alpha
+    if idx < length:
+        alpha += slope[idx]
+
 
 def loss_sup(logit_S1, logit_S2, labels_S1, labels_S2):
     ce = nn.CrossEntropyLoss() 
@@ -259,6 +286,9 @@ U_sampler = torch.utils.data.SubsetRandomSampler(U_idx)
 S_loader1 = torch.utils.data.DataLoader(trainset, batch_size=S_batch_size, sampler=S_sampler)
 S_loader2 = torch.utils.data.DataLoader(trainset, batch_size=S_batch_size, sampler=S_sampler)
 U_loader = torch.utils.data.DataLoader(trainset, batch_size=U_batch_size, sampler=U_sampler)
+# loaders for peer samples
+P_loader1 = torch.utils.data.DataLoader(trainset, batch_size=U_batch_size, sampler=U_sampler)
+P_loader2 = torch.utils.data.DataLoader(trainset, batch_size=U_batch_size, sampler=U_sampler)
 
 #net1 adversary object
 adversary1 = GradientSignAttack(
@@ -315,6 +345,9 @@ def train(epoch):
 
     adjust_learning_rate(optimizer, epoch)
     adjust_lamda(epoch)
+    # tuning alpha of peer term
+    adjust_alpha(epoch)
+    print(f"At epoch {epoch} the present alpha is {alpha:.5f}")
     
     total_S1 = 0
     total_S2 = 0
@@ -333,11 +366,16 @@ def train(epoch):
     S_iter1 = iter(S_loader1)
     S_iter2 = iter(S_loader2)
     U_iter = iter(U_loader)
+    # iterator for peer
+    P_iter1 = iter(P_loader1)
+    P_iter2 = iter(P_loader2)
     print('epoch:', epoch+1)
     for i in tqdm(range(step)):
         inputs_S1, labels_S1 = S_iter1.next()
         inputs_S2, labels_S2 = S_iter2.next()
-        inputs_U, labels_U = U_iter.next() # note that labels_U will not be used for training. 
+        inputs_U, labels_U = U_iter.next() # note that labels_U will not be used for training.
+        inputs_P1, lables_P1 = P_iter1.next()
+        inputs_P2, lables_P2 = P_iter2.next()
 
         inputs_S1, labels_S1 = inputs_S1.cuda(), labels_S1.cuda()
         inputs_S2, labels_S2 = inputs_S2.cuda(), labels_S2.cuda()
@@ -348,6 +386,9 @@ def train(epoch):
         logit_S2 = net2(inputs_S2)
         logit_U1 = net1(inputs_U)
         logit_U2 = net2(inputs_U)
+        # predictions on peer terms
+        logit_P1 = net1(inputs_P1)
+        logit_P2 = net2(inputs_P1)
 
         _, predictions_S1 = torch.max(logit_S1, 1)
         _, predictions_S2 = torch.max(logit_S2, 1)
@@ -382,9 +423,11 @@ def train(epoch):
         
         Loss_sup = loss_sup(logit_S1, logit_S2, labels_S1, labels_S2)
         Loss_cot = loss_cot(logit_U1, logit_U2)
+        Loss_Peer = loss_cot(logit_P1, logit_P2) #peer term in the second loss
         Loss_diff = loss_diff(logit_S1, logit_S2, perturbed_logit_S1, perturbed_logit_S2, logit_U1, logit_U2, perturbed_logit_U1, perturbed_logit_U2)
         
-        total_loss = Loss_sup + lambda_cot*Loss_cot + lambda_diff*Loss_diff
+        # added peer term in Loss_cot; 2020-01-23PST
+        total_loss = Loss_sup + lambda_cot*( (1.-alpha) * Loss_cot - alpha * Loss_Peer ) + lambda_diff*Loss_diff
         total_loss.backward()
         optimizer.step()
 
